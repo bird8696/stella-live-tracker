@@ -34,7 +34,6 @@ MEMBER_GRADIENTS = {
                "linear-gradient(to right in oklch, #8fe1b0, #058891)"),
 }
 
-# 배경 밝기에 따른 텍스트 색상
 MEMBER_TEXT_COLORS = {
     "유니":   "#1a0a4a",
     "후야":   "#f0e6ff",
@@ -48,23 +47,69 @@ MEMBER_TEXT_COLORS = {
     "리코":   "#002a1a",
 }
 
-# 배경에 어울리는 배지 색상 (텍스트, 배경)
 MEMBER_BADGE_COLORS = {
-    "유니":   ("rgba(26,10,74,0.2)",   "#1a0a4a"),
+    "유니":   ("rgba(26,10,74,0.2)",    "#1a0a4a"),
     "후야":   ("rgba(255,255,255,0.15)", "#f0e6ff"),
-    "히나":   ("rgba(45,0,0,0.2)",     "#2d0000"),
+    "히나":   ("rgba(45,0,0,0.2)",      "#2d0000"),
     "마시로": ("rgba(255,255,255,0.15)", "#ffffff"),
     "리제":   ("rgba(255,187,187,0.15)", "#ffbbbb"),
-    "타비":   ("rgba(10,32,64,0.2)",   "#0a2040"),
-    "시부키": ("rgba(26,0,64,0.2)",    "#1a0040"),
+    "타비":   ("rgba(10,32,64,0.2)",    "#0a2040"),
+    "시부키": ("rgba(26,0,64,0.2)",     "#1a0040"),
     "린":     ("rgba(255,255,255,0.15)", "#ffffff"),
-    "나나":   ("rgba(61,0,21,0.2)",    "#3d0015"),
-    "리코":   ("rgba(0,42,26,0.2)",    "#002a1a"),
+    "나나":   ("rgba(61,0,21,0.2)",     "#3d0015"),
+    "리코":   ("rgba(0,42,26,0.2)",     "#002a1a"),
+}
+
+# 버튼 배경/텍스트 색상 (멤버 테마에 맞게)
+MEMBER_BTN_COLORS = {
+    "유니":   ("#1a0a4a", "#d4c8ff"),
+    "후야":   ("#2d1a4a", "#e8d5ff"),
+    "히나":   ("#2d0000", "#ffd0c8"),
+    "마시로": ("#111314", "#cccccc"),
+    "리제":   ("#1a0000", "#ff9999"),
+    "타비":   ("#0a2040", "#c8eaff"),
+    "시부키": ("#1a0040", "#e8d0ff"),
+    "린":     ("#041030", "#b0d0ff"),
+    "나나":   ("#3d0015", "#ffd0dd"),
+    "리코":   ("#002a1a", "#a0e8c8"),
 }
 
 def load_css(path: str):
     with open(path, encoding="utf-8") as f:
         st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+
+@st.dialog("상세 정보")
+def show_detail(r: dict):
+    name   = r["name"]
+    status = r["status"]
+    pad_grad, _ = MEMBER_GRADIENTS.get(name, ("#333", "#333"))
+    text_color  = MEMBER_TEXT_COLORS.get(name, "#ffffff")
+    img         = r.get("img", "")
+
+    status_kor = "🟢 방송 예정" if status == "live" else "🔴 휴방" if status == "rest" else "⚪ 공지 없음"
+    time_str   = r.get("time") or "-"
+    reason_str = r.get("reason") or "-"
+
+    img_html = (
+        f'<img src="{img}" style="width:80px;height:80px;border-radius:50%;object-fit:cover;margin-bottom:12px;">'
+        if img else ""
+    )
+
+    st.markdown(
+        f'<div style="background:{pad_grad} padding-box,{pad_grad} border-box;'
+        f'border:2px solid transparent;border-radius:16px;padding:24px;text-align:center;margin-bottom:1rem;">'
+        f'{img_html}'
+        f'<div style="font-size:1.4rem;font-weight:700;color:{text_color};">{name}</div>'
+        f'</div>',
+        unsafe_allow_html=True
+    )
+
+    col1, col2 = st.columns(2)
+    col1.metric("상태", status_kor)
+    col2.metric("방송 시간", time_str)
+    st.divider()
+    st.markdown("**📝 사유**")
+    st.info(reason_str)
 
 load_css("style.css")
 
@@ -78,7 +123,7 @@ st.markdown(
 
 col_btn = st.columns([1, 2, 1])
 with col_btn[1]:
-    clicked = st.button("📡 오늘 방송 조회", use_container_width=True)
+    clicked = st.button("📡 오늘 방송 조회", type="primary", use_container_width=True)
 
 if clicked:
     results = []
@@ -90,11 +135,8 @@ if clicked:
 
         if not menu_id:
             results.append({
-                "name":   name,
-                "img":    info.get("img", ""),
-                "status": "unknown",
-                "reason": "게시판 ID 미설정",
-                "time":   None
+                "name": name, "img": info.get("img", ""),
+                "status": "unknown", "reason": "게시판 ID 미설정", "time": None
             })
             continue
 
@@ -102,32 +144,25 @@ if clicked:
             post = fetch_today_post(menu_id)
             if post is None:
                 results.append({
-                    "name":   name,
-                    "img":    info.get("img", ""),
-                    "status": "unknown",
-                    "reason": "아직 공지사항이 없습니다",
-                    "time":   None
+                    "name": name, "img": info.get("img", ""),
+                    "status": "unknown", "reason": "아직 공지사항이 없습니다", "time": None
                 })
             else:
-                analysis = analyze_post(
-                    name,
-                    post["subject"],
-                    post["summary"],
-                    post["write_date"]
-                )
+                analysis = analyze_post(name, post["subject"], post["summary"], post["write_date"])
                 analysis["name"] = name
                 analysis["img"]  = info.get("img", "")
                 results.append(analysis)
         except Exception as e:
             results.append({
-                "name":   name,
-                "img":    info.get("img", ""),
-                "status": "error",
-                "reason": str(e)[:40],
-                "time":   None
+                "name": name, "img": info.get("img", ""),
+                "status": "error", "reason": str(e)[:40], "time": None
             })
 
     progress.empty()
+    st.session_state["results"] = results
+
+if "results" in st.session_state:
+    results = st.session_state["results"]
 
     live_n    = sum(1 for r in results if r["status"] == "live")
     rest_n    = sum(1 for r in results if r["status"] == "rest")
@@ -142,48 +177,34 @@ if clicked:
         unsafe_allow_html=True
     )
 
-    cards_html = '<div class="member-grid">'
-
-    for r in results:
-        name        = r["name"]
-        status      = r["status"]
-        img         = r.get("img", "")
+    cols = st.columns(5)
+    for i, r in enumerate(results):
+        name       = r["name"]
+        status     = r["status"]
+        img        = r.get("img", "")
         pad_grad, border_grad = MEMBER_GRADIENTS.get(name, ("#333", "#333"))
-        text_color  = MEMBER_TEXT_COLORS.get(name, "#ffffff")
+        text_color = MEMBER_TEXT_COLORS.get(name, "#ffffff")
         badge_bg, badge_text_color = MEMBER_BADGE_COLORS.get(name, ("rgba(255,255,255,0.15)", "#ffffff"))
+        btn_bg, btn_text = MEMBER_BTN_COLORS.get(name, ("#1a1a2e", "#ffffff"))
 
         card_class  = "live" if status == "live" else "rest" if status == "rest" else ""
         dot_class   = "dot-live" if status == "live" else "dot-rest" if status == "rest" else "dot-unknown"
         badge_text  = "방송 예정" if status == "live" else "휴방" if status == "rest" else "공지 없음"
-
-        card_style = (
-            f"border: 2px solid transparent;"
-            f"background: {pad_grad} padding-box, {border_grad} border-box;"
-        )
+        card_style  = f"border:2px solid transparent;background:{pad_grad} padding-box,{border_grad} border-box;"
+        badge_style = f"background:{badge_bg};color:{badge_text_color};border:1px solid {badge_text_color}33;"
 
         if img:
             avatar_html = f'<img class="avatar-img" src="{img}" alt="{name}">'
         else:
-            avatar_style = (
-                f"background: {pad_grad} padding-box, {border_grad} border-box;"
-                f"border: 2px solid transparent;"
-                f"color: {text_color};"
-                f"font-weight: 700;"
-            )
-            avatar_html = f'<div class="avatar-placeholder" style="{avatar_style}">{name[0]}</div>'
+            avatar_style = f"background:{pad_grad} padding-box,{border_grad} border-box;border:2px solid transparent;color:{text_color};font-weight:700;"
+            avatar_html  = f'<div class="avatar-placeholder" style="{avatar_style}">{name[0]}</div>'
 
         time_html = (
             f'<div class="member-time" style="color:{text_color};opacity:0.85;">🕐 {r["time"]}</div>'
             if r.get("time") else ""
         )
 
-        badge_style = (
-            f"background:{badge_bg};"
-            f"color:{badge_text_color};"
-            f"border: 1px solid {badge_text_color}33;"
-        )
-
-        card = (
+        card_html = (
             f'<div class="member-card {card_class}" style="{card_style}">'
             f'<div class="avatar-wrap">{avatar_html}'
             f'<div class="status-dot {dot_class}"></div></div>'
@@ -193,15 +214,27 @@ if clicked:
             f'<div class="member-reason" style="color:{text_color};opacity:0.75;font-size:0.78rem;">{r["reason"]}</div>'
             f'</div>'
         )
-        cards_html += card
 
-    cards_html += '</div>'
+        # 버튼 색상 인라인 주입
+        btn_style_inject = f"""
+        <style>
+        div[data-testid="stButton"] > button[key="detail_{name}"],
+        #detail_{name} > button {{
+            background: {btn_bg} !important;
+            color: {btn_text} !important;
+            border: 1.5px solid {btn_text}44 !important;
+        }}
+        </style>
+        """
+
+        with cols[i % 5]:
+            st.markdown(card_html, unsafe_allow_html=True)
+            st.markdown(btn_style_inject, unsafe_allow_html=True)
+            st.markdown('<div class="detail-btn">', unsafe_allow_html=True)
+            if st.button("✦ 상세보기", key=f"detail_{name}", use_container_width=True):
+                show_detail(r)
+            st.markdown('</div>', unsafe_allow_html=True)
 
     KST = pytz.timezone("Asia/Seoul")
     now_str = datetime.now(KST).strftime("%Y.%m.%d %H:%M") + " KST 기준"
-
-    st.markdown(cards_html, unsafe_allow_html=True)
-    st.markdown(
-        f'<div class="update-time">🕐 {now_str}</div>',
-        unsafe_allow_html=True
-    )
+    st.markdown(f'<div class="update-time">🕐 {now_str}</div>', unsafe_allow_html=True)
