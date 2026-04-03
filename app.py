@@ -60,7 +60,7 @@ MEMBER_BADGE_COLORS = {
     "리코":   ("rgba(0,42,26,0.2)",     "#002a1a"),
 }
 
-# 버튼 배경/텍스트 색상 (멤버 테마에 맞게)
+# [수정] 상세보기 버튼 색상 - 멤버 테마 어두운 버전
 MEMBER_BTN_COLORS = {
     "유니":   ("#1a0a4a", "#d4c8ff"),
     "후야":   ("#2d1a4a", "#e8d5ff"),
@@ -80,8 +80,8 @@ def load_css(path: str):
 
 @st.dialog("상세 정보")
 def show_detail(r: dict):
-    name   = r["name"]
-    status = r["status"]
+    name        = r["name"]
+    status      = r["status"]
     pad_grad, _ = MEMBER_GRADIENTS.get(name, ("#333", "#333"))
     text_color  = MEMBER_TEXT_COLORS.get(name, "#ffffff")
     img         = r.get("img", "")
@@ -190,14 +190,34 @@ if "results" in st.session_state:
         card_class  = "live" if status == "live" else "rest" if status == "rest" else ""
         dot_class   = "dot-live" if status == "live" else "dot-rest" if status == "rest" else "dot-unknown"
         badge_text  = "방송 예정" if status == "live" else "휴방" if status == "rest" else "공지 없음"
-        card_style  = f"border:2px solid transparent;background:{pad_grad} padding-box,{border_grad} border-box;"
         badge_style = f"background:{badge_bg};color:{badge_text_color};border:1px solid {badge_text_color}33;"
+
+        # [수정] 카드 하단 border 제거 → 버튼과 시각적으로 이어지도록
+        card_style = (
+            f"border:2px solid transparent;"
+            f"border-bottom:none;"
+            f"background:{pad_grad} padding-box,{border_grad} border-box;"
+        )
+
+        # [수정] 버튼 색상 멤버별 인라인 주입
+        btn_style_inject = (
+            f"<style>"
+            f"div[data-testid='stButton']:has(button[kind='secondary']) + div .detail-btn > button,"
+            f"button[key='detail_{name}'] {{"
+            f"background: {btn_bg} !important;"
+            f"color: {btn_text} !important;"
+            f"border-color: transparent !important;"
+            f"}}</style>"
+        )
 
         if img:
             avatar_html = f'<img class="avatar-img" src="{img}" alt="{name}">'
         else:
-            avatar_style = f"background:{pad_grad} padding-box,{border_grad} border-box;border:2px solid transparent;color:{text_color};font-weight:700;"
-            avatar_html  = f'<div class="avatar-placeholder" style="{avatar_style}">{name[0]}</div>'
+            avatar_style = (
+                f"background:{pad_grad} padding-box,{border_grad} border-box;"
+                f"border:2px solid transparent;color:{text_color};font-weight:700;"
+            )
+            avatar_html = f'<div class="avatar-placeholder" style="{avatar_style}">{name[0]}</div>'
 
         time_html = (
             f'<div class="member-time" style="color:{text_color};opacity:0.85;">🕐 {r["time"]}</div>'
@@ -214,18 +234,6 @@ if "results" in st.session_state:
             f'<div class="member-reason" style="color:{text_color};opacity:0.75;font-size:0.78rem;">{r["reason"]}</div>'
             f'</div>'
         )
-
-        # 버튼 색상 인라인 주입
-        btn_style_inject = f"""
-        <style>
-        div[data-testid="stButton"] > button[key="detail_{name}"],
-        #detail_{name} > button {{
-            background: {btn_bg} !important;
-            color: {btn_text} !important;
-            border: 1.5px solid {btn_text}44 !important;
-        }}
-        </style>
-        """
 
         with cols[i % 5]:
             st.markdown(card_html, unsafe_allow_html=True)

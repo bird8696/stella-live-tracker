@@ -16,6 +16,7 @@ body,
   overflow: hidden;
 }
 
+/* 별 레이어 1 - 작고 빠르게 반짝 */
 .stApp::before {
   content: "";
   position: fixed;
@@ -49,6 +50,7 @@ body,
   z-index: 0;
 }
 
+/* 별 레이어 2 - 크고 느리게 반짝 (보라/파랑/핑크/노랑) */
 .stApp::after {
   content: "";
   position: fixed;
@@ -181,21 +183,26 @@ body,
   margin: 1.5rem 0;
 }
 
+/* [수정] 고정 높이 + flex 정렬 → 카드 크기 균일하게 유지 */
 .member-card {
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 20px;
+  border-radius: 20px 20px 0 0;
   padding: 20px 14px 16px;
   text-align: center;
-  transition:
-    transform 0.2s,
-    border-color 0.2s;
+  transition: transform 0.2s;
   position: relative;
   overflow: hidden;
+
+  height: 220px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
 }
 
 .member-card:hover {
-  transform: translateY(-3px);
+  transform: translateY(-2px);
 }
 
 .member-card.live {
@@ -213,6 +220,7 @@ body,
   width: 72px;
   height: 72px;
   margin: 0 auto 12px;
+  flex-shrink: 0;
 }
 
 .avatar-img {
@@ -260,6 +268,7 @@ body,
   font-weight: 700;
   color: #e2e8f0;
   margin-bottom: 6px;
+  flex-shrink: 0;
 }
 
 .member-status-badge {
@@ -269,6 +278,7 @@ body,
   padding: 3px 10px;
   border-radius: 20px;
   margin-bottom: 8px;
+  flex-shrink: 0;
 }
 
 .badge-live {
@@ -284,18 +294,26 @@ body,
   color: #94a3b8;
 }
 
+.member-time {
+  font-size: 0.8rem;
+  font-weight: 700;
+  margin-top: 4px;
+  flex-shrink: 0;
+}
+
+/* [수정] 텍스트 최대 3줄로 제한 + 넘치면 말줄임표 */
 .member-reason {
   font-size: 0.72rem;
   color: #64748b;
   line-height: 1.4;
-  min-height: 2rem;
-}
-
-.member-time {
-  font-size: 0.8rem;
-  font-weight: 700;
   margin-top: 6px;
-  color: #4ade80;
+  flex: 1;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  text-overflow: ellipsis;
+  width: 100%;
 }
 
 .update-time {
@@ -323,21 +341,24 @@ div.stButton > button[kind="primary"]:hover {
   opacity: 0.85 !important;
 }
 
-/* 상세보기 버튼 공통 */
+/* 상세보기 버튼 - 카드 하단에 붙어서 하나처럼 보이도록 */
+.detail-btn {
+  margin-top: 0 !important;
+}
+
 .detail-btn > button {
-  border-radius: 12px !important;
+  border-radius: 0 0 20px 20px !important;
   font-size: 0.78rem !important;
   font-weight: 600 !important;
-  padding: 5px 0 !important;
+  padding: 8px 0 !important;
   width: 100% !important;
-  transition:
-    opacity 0.2s,
-    transform 0.15s !important;
-  border: 1.5px solid transparent !important;
+  transition: filter 0.2s !important;
   letter-spacing: 0.03em !important;
+  border-top: none !important;
+  margin-top: 0 !important;
 }
 
 .detail-btn > button:hover {
-  opacity: 0.85 !important;
-  transform: translateY(-1px) !important;
+  filter: brightness(1.2) !important;
+  opacity: 1 !important;
 }
